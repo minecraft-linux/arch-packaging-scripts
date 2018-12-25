@@ -1,0 +1,22 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: archlinux/base:latest
+    steps:
+      - checkout
+      - run:
+          name: Enable multilib & update system
+          command: printf "[multilib]\nInclude = /etc/pacman.d/mirrorlist\n" >> /etc/pacman.conf && pacman -Syu --noconfirm
+      - run:
+          name: Install deps
+          command: pacman -S base-devel git lib32-libglvnd --noconfirm
+      - run:
+          name: Prepare the build enviroment
+          command: 'mkdir /build && cp build.sh /build && chown -R nobody:nobody /build && echo "nobody ALL=(root) NOPASSWD: /usr/bin/pacman" >> /etc/sudoers'
+      - run:
+          name: Run the buildscript
+          command: cd /build && sudo -u nobody env MAKEFLAGS=-j8 ./build.sh
+      - store_artifacts:
+          path: /build/output
+          destination: /
